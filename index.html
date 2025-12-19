@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stranger Things Maze - Hard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #000;
+            color: #e00a0a;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(225, 10, 10, 0.1) 1px, transparent 1px),
+                radial-gradient(circle at 75% 75%, rgba(225, 10, 10, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        
+        .container {
+            position: relative;
+            width: 900px;
+            height: 700px;
+            border: 3px solid #e00a0a;
+            box-shadow: 0 0 30px #e00a0a, inset 0 0 30px rgba(225, 10, 10, 0.3);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .stranger-things-logo {
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            font-size: 52px;
+            color: #e00a0a;
+            text-shadow: 0 0 15px #e00a0a, 0 0 30px #e00a0a;
+            letter-spacing: 10px;
+            margin-bottom: 15px;
+            animation: logoGlitch 5s infinite;
+        }
+        
+        @keyframes logoGlitch {
+            0%, 100% { transform: translateX(0); }
+            96% { transform: translateX(0); }
+            97% { transform: translateX(-5px); }
+            98% { transform: translateX(5px); }
+            99% { transform: translateX(-3px); }
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+        
+        .instructions {
+            font-size: 16px;
+            color: #e00a0a;
+            text-shadow: 0 0 5px #e00a0a;
+        }
+        
+        .player {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: radial-gradient(circle at 30% 30%, #00ff00, #008800);
+            border-radius: 50%;
+            z-index: 5;
+            box-shadow: 0 0 20px #00ff00;
+            transition: all 0.15s;
+            border: 1px solid #00ff00;
+        }
+        
+        .finish-zone {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            background: radial-gradient(circle at center, rgba(255, 215, 0, 0.4), transparent 70%);
+            border: 3px solid gold;
+            z-index: 4;
+            animation: finishPulse 1.5s infinite alternate;
+            box-shadow: 0 0 25px gold;
+            border-radius: 5px;
+        }
+        
+        @keyframes finishPulse {
+            0% { 
+                transform: scale(1);
+                border-color: gold;
+                box-shadow: 0 0 25px gold, 0 0 40px rgba(255, 215, 0, 0.3);
+            }
+            100% { 
+                transform: scale(1.05);
+                border-color: #ffd700;
+                box-shadow: 0 0 35px #ffd700, 0 0 50px rgba(255, 215, 0, 0.5);
+            }
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #e00a0a;
+            text-align: center;
+            z-index: 3;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: 1px solid #e00a0a;
+        }
+        
+        .control-keys {
+            display: grid;
+            grid-template-columns: repeat(3, 70px);
+            grid-template-rows: repeat(2, 70px);
+            gap: 12px;
+            margin-top: 15px;
+        }
+        
+        .key {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(145deg, #111, #000);
+            border: 2px solid #e00a0a;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #e00a0a;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .key:hover {
+            background: #e00a0a;
+            color: #000;
+            box-shadow: 0 0 20px #e00a0a;
+            transform: translateY(-2px);
+        }
+        
+        .key:active {
+            transform: translateY(1px);
+        }
+        
+        .message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 50px;
+            border: 3px solid #e00a0a;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 20;
+            display: none;
+            box-shadow: 0 0 60px #e00a0a, inset 0 0 30px rgba(225, 10, 10, 0.2);
+            width: 80%;
+            max-width: 700px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .message h2 {
+            margin-bottom: 25px;
+            font-size: 42px;
+            color: #e00a0a;
+            text-shadow: 0 0 15px #e00a0a;
+            letter-spacing: 3px;
+        }
+        
+        .message p {
+            margin-bottom: 35px;
+            font-size: 22px;
+            line-height: 1.6;
+            color: #ddd;
+        }
+        
+        .telegram-link {
+            display: inline-block;
+            background: linear-gradient(145deg, #e00a0a, #b30000);
+            color: #000;
+            padding: 18px 45px;
+            font-size: 24px;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+            border: 2px solid #e00a0a;
+            margin-top: 20px;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .telegram-link:hover {
+            background: linear-gradient(145deg, #000, #111);
+            color: #e00a0a;
+            box-shadow: 0 0 30px #e00a0a;
+            transform: translateY(-3px);
+        }
+        
+        .stats {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #00ff00;
+            font-size: 18px;
+            text-shadow: 0 0 10px #00ff00;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: 1px solid #00ff00;
+        }
+        
+        .timer {
+            color: #ff9900;
+        }
+        
+        .hint {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #00ff00;
+            font-size: 18px;
+            text-align: center;
+            text-shadow: 0 0 8px #00ff00;
+            z-index: 3;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: 1px solid #00ff00;
+            animation: hintBlink 3s infinite;
+        }
+        
+        @keyframes hintBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .dead-end {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 0, 0, 0.1);
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .fog {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 20%, transparent 150px, rgba(0, 0, 0, 0.9) 250px),
+                radial-gradient(circle at 80% 80%, transparent 150px, rgba(0, 0, 0, 0.9) 250px);
+            pointer-events: none;
+            z-index: 2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <canvas id="gameCanvas" width="900" height="700"></canvas>
+        <div class="fog"></div>
+        
+        <div class="header">
+            <div class="stranger-things-logo">STRANGER THINGS</div>
+            <div class="subtitle">THE MAZE CHALLENGE</div>
+            <div class="instructions">Find the golden exit to reveal the secret</div>
+        </div>
+        
+        <div class="player" id="player"></div>
+        <div class="finish-zone" id="finishZone"></div>
+        
+        <div class="stats">
+            Moves: <span id="moveCount">0</span> | 
+            Time: <span class="timer" id="timer">00:00</span>
+        </div>
+        
+        <div class="hint" id="hint">The exit is hidden in the maze. Explore every path!</div>
+        
+        <div class="message" id="successMessage">
+            <h2>VICTORY ACHIEVED!</h2>
+            <p>You have conquered the Stranger Things Maze! Your determination has been rewarded with access to our secret Telegram channel.</p>
+            <p>Join us for more mysteries and adventures...</p>
+            <a href="https://t.me/+GxC5S0uBWIhlMjZi" class="telegram-link" target="_blank">ENTER SECRET CHANNEL</a>
+            <p style="margin-top: 25px; font-size: 16px; color: #888;">https://t.me/+GxC5S0uBWIhlMjZi</p>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <p style="margin-bottom: 10px; font-size: 18px;">NAVIGATION CONTROLS</p>
+        <div class="control-keys">
+            <div class="key" id="up">↑</div>
+            <div class="key" id="left">←</div>
+            <div class="key" id="down">↓</div>
+            <div class="key" id="right">→</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const player = document.getElementById('player');
+        const finishZone = document.getElementById('finishZone');
+        const successMessage = document.getElementById('successMessage');
+        const hint = document.getElementById('hint');
+        const moveCountEl = document.getElementById('moveCount');
+        const timerEl = document.getElementById('timer');
+        
+        // Game settings
+        let playerX = 60;
+        let playerY = 630;
+        const playerSize = 22;
+        const moveSpeed = 6;
+        const finishSize = 70;
+        
+        // Game state
+        let gameCompleted = false;
+        let moveCount = 0;
+        let startTime = Date.now();
+        let timerInterval;
+        
+        // Complex maze walls - HARD VERSION
+        const walls = [
+            // Outer walls
+            {x: 0, y: 0, width: 900, height: 25},
+            {x: 0, y: 0, width: 25, height: 700},
+            {x: 875, y: 0, width: 25, height: 700},
+            {x: 0, y: 675, width: 900, height: 25},
+            
+            // Zone 1: Starting area (traps)
+            {x: 25, y: 100, width: 150, height: 20},
+            {x: 150, y: 25, width: 20, height: 150},
+            {x: 25, y: 200, width: 200, height: 20},
+            {x: 200, y: 100, width: 20, height: 120},
+            
+            // Zone 2: First puzzle
+            {x: 250, y: 25, width: 20, height: 250},
+            {x: 250, y: 25, width: 150, height: 20},
+            {x: 380, y: 25, width: 20, height: 150},
+            {x: 300, y: 150, width: 100, height: 20},
+            {x: 300, y: 150, width: 20, height: 100},
+            
+            // Zone 3: Dead end maze
+            {x: 450, y: 50, width: 20, height: 200},
+            {x: 450, y: 50, width: 150, height: 20},
+            {x: 580, y: 50, width: 20, height: 150},
+            {x: 500, y: 150, width: 100, height: 20},
+            {x: 500, y: 180, width: 20, height: 70},
+            {x: 450, y: 220, width: 70, height: 20},
+            
+            // Zone 4: Center labyrinth
+            {x: 300, y: 300, width: 300, height: 20},
+            {x: 300, y: 300, width: 20, height: 150},
+            {x: 580, y: 300, width: 20, height: 150},
+            {x: 300, y: 430, width: 300, height: 20},
+            
+            // Internal center walls
+            {x: 380, y: 320, width: 20, height: 110},
+            {x: 480, y: 320, width: 20, height: 110},
+            {x: 400, y: 350, width: 80, height: 20},
+            {x: 400, y: 380, width: 80, height: 20},
+            
+            // Zone 5: Right side traps
+            {x: 650, y: 100, width: 20, height: 200},
+            {x: 650, y: 100, width: 150, height: 20},
+            {x: 780, y: 100, width: 20, height: 120},
+            {x: 700, y: 200, width: 80, height: 20},
+            {x: 700, y: 230, width: 20, height: 70},
+            
+            // Zone 6: Bottom left complex
+            {x: 25, y: 400, width: 200, height: 20},
+            {x: 200, y: 400, width: 20, height: 150},
+            {x: 25, y: 530, width: 200, height: 20},
+            {x: 100, y: 420, width: 20, height: 110},
+            {x: 150, y: 480, width: 70, height: 20},
+            
+            // Zone 7: Bottom center maze
+            {x: 250, y: 480, width: 200, height: 20},
+            {x: 250, y: 480, width: 20, height: 100},
+            {x: 430, y: 480, width: 20, height: 100},
+            {x: 270, y: 550, width: 180, height: 20},
+            
+            // Zone 8: Path to exit (twists and turns)
+            {x: 500, y: 480, width: 150, height: 20},
+            {x: 500, y: 480, width: 20, height: 100},
+            {x: 630, y: 480, width: 20, height: 100},
+            {x: 520, y: 550, width: 130, height: 20},
+            
+            // Zone 9: Final challenge before exit
+            {x: 700, y: 350, width: 150, height: 20},
+            {x: 700, y: 350, width: 20, height: 130},
+            {x: 830, y: 350, width: 20, height: 130},
+            {x: 720, y: 450, width: 110, height: 20},
+            
+            // Hidden dead ends
+            {x: 100, y: 250, width: 100, height: 20},
+            {x: 600, y: 280, width: 100, height: 20},
+            {x: 350, y: 600, width: 100, height: 20},
+            
+            // Exit corridor (this leads to finish!)
+            {x: 750, y: 500, width: 20, height: 100},
+            {x: 750, y: 580, width: 100, height: 20},
+        ];
+        
+        // Finish position - HIDDEN but reachable!
+        const finishX = 780;
+        const finishY = 580;
+        
+        // Position finish zone
+        finishZone.style.left = `${finishX}px`;
+        finishZone.style.top = `${finishY}px`;
+        
+        // Start timer
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                const minutes = Math.floor(elapsed / 60000);
+                const seconds = Math.floor((elapsed % 60000) / 1000);
+                timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+        
+        // Draw maze with effects
+        function drawMaze() {
+            // Background
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw walls with 3D effect
+            walls.forEach(wall => {
+                // Shadow
+                ctx.fillStyle = '#8b0000';
+                ctx.fillRect(wall.x + 3, wall.y + 3, wall.width, wall.height);
+                
+                // Main wall
+                ctx.fillStyle = '#e00a0a';
+                ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+                
+                // Highlight
+                ctx.fillStyle = '#ff4444';
+                ctx.fillRect(wall.x, wall.y, wall.width - 2, 3);
+                ctx.fillRect(wall.x, wall.y, 3, wall.height - 2);
+                
+                // Glow effect
+                ctx.shadowColor = '#e00a0a';
+                ctx.shadowBlur = 20;
+                ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+                ctx.shadowBlur = 0;
+            });
+            
+            // Draw start and finish indicators
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+            ctx.fillRect(40, 620, 40, 40);
+            ctx.fillStyle = '#00ff00';
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText('START', 35, 615);
+            
+            // Hidden finish indicator (only visible when close)
+            const distanceToFinish = Math.sqrt(
+                Math.pow(playerX - finishX, 2) + 
+                Math.pow(playerY - finishY, 2)
+            );
+            
+            if (distanceToFinish < 200) {
+                ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+                ctx.fillRect(finishX - 10, finishY - 10, finishSize + 20, finishSize + 20);
+                
+                ctx.fillStyle = 'gold';
+                ctx.font = 'bold 18px Arial';
+                ctx.fillText('EXIT NEARBY', finishX - 20, finishY - 20);
+            }
+        }
+        
+        // Check collisions
+        function checkCollision(x, y, size) {
+            for (const wall of walls) {
+                if (x < wall.x + wall.width &&
+                    x + size > wall.x &&
+                    y < wall.y + wall.height &&
+                    y + size > wall.y) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        // Update player and check finish
+        function updatePlayerPosition() {
+            player.style.left = `${playerX}px`;
+            player.style.top = `${playerY}px`;
+            
+            // Check if player reached finish
+            if (playerX >= finishX && 
+                playerX <= finishX + finishSize - playerSize &&
+                playerY >= finishY && 
+                playerY <= finishY + finishSize - playerSize &&
+                !gameCompleted) {
+                
+                gameCompleted = true;
+                clearInterval(timerInterval);
+                
+                // Victory effects
+                player.style.background = 'radial-gradient(circle at 30% 30%, gold, #ff9900)';
+                player.style.boxShadow = '0 0 30px gold, 0 0 50px gold';
+                
+                // Show success message
+                setTimeout(() => {
+                    successMessage.style.display = 'block';
+                    hint.style.display = 'none';
+                    
+                    // Confetti effect
+                    createConfetti();
+                }, 1000);
+            }
+        }
+        
+        // Move player
+        function movePlayer(dx, dy) {
+            if (gameCompleted) return;
+            
+            const newX = playerX + dx;
+            const newY = playerY + dy;
+            
+            if (!checkCollision(newX, newY, playerSize)) {
+                if (newX >= 0 && newX + playerSize <= canvas.width) {
+                    playerX = newX;
+                }
+                if (newY >= 0 && newY + playerSize <= canvas.height) {
+                    playerY = newY;
+                }
+                
+                moveCount++;
+                moveCountEl.textContent = moveCount;
+                updatePlayerPosition();
+            }
+        }
+        
+        // Confetti effect
+        function createConfetti() {
+            const colors = ['#e00a0a', '#00ff00', 'gold', '#0088ff', '#ff00ff'];
+            
+            for (let i = 0; i < 150; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.style.position = 'absolute';
+                    confetti.style.width = '10px';
+                    confetti.style.height = '10px';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.borderRadius = '50%';
+                    confetti.style.left = `${Math.random() * 100}%`;
+                    confetti.style.top = '-20px';
+                    confetti.style.zIndex = '15';
+                    confetti.style.boxShadow = '0 0 10px currentColor';
+                    
+                    document.querySelector('.container').appendChild(confetti);
+                    
+                    // Animation
+                    const animation = confetti.animate([
+                        { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+                        { transform: `translateY(${window.innerHeight}px) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+                    ], {
+                        duration: 2000 + Math.random() * 2000,
+                        easing: 'cubic-bezier(0.215, 0.61, 0.355, 1)'
+                    });
+                    
+                    animation.onfinish = () => confetti.remove();
+                }, i * 20);
+            }
+        }
+        
+        // Controls
+        document.getElementById('up').addEventListener('click', () => movePlayer(0, -moveSpeed));
+        document.getElementById('down').addEventListener('click', () => movePlayer(0, moveSpeed));
+        document.getElementById('left').addEventListener('click', () => movePlayer(-moveSpeed, 0));
+        document.getElementById('right').addEventListener('click', () => movePlayer(moveSpeed, 0));
+        
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (gameCompleted) return;
+            
+            switch(e.key) {
+                case 'ArrowUp': movePlayer(0, -moveSpeed); break;
+                case 'ArrowDown': movePlayer(0, moveSpeed); break;
+                case 'ArrowLeft': movePlayer(-moveSpeed, 0); break;
+                case 'ArrowRight': movePlayer(moveSpeed, 0); break;
+                case 'w': case 'W': movePlayer(0, -moveSpeed); break;
+                case 's': case 'S': movePlayer(0, moveSpeed); break;
+                case 'a': case 'A': movePlayer(-moveSpeed, 0); break;
+                case 'd': case 'D': movePlayer(moveSpeed, 0); break;
+            }
+        });
+        
+        // Initialize
+        function init() {
+            drawMaze();
+            updatePlayerPosition();
+            startTimer();
+            
+            // Animation loop
+            setInterval(() => {
+                drawMaze();
+            }, 30);
+            
+            // Hide hint after 15 seconds
+            setTimeout(() => {
+                hint.style.opacity = '0.7';
+                setTimeout(() => {
+                    hint.style.display = 'none';
+                }, 3000);
+            }, 15000);
+            
+            // Dynamic hint system
+            setInterval(() => {
+                if (gameCompleted) return;
+                
+                const distance = Math.sqrt(
+                    Math.pow(playerX - finishX, 2) + 
+                    Math.pow(playerY - finishY, 2)
+                );
+                
+                if (distance < 300 && hint.style.display !== 'none') {
+                    hint.textContent = "You're getting warmer! Exit is nearby...";
+                    hint.style.color = '#ff9900';
+                    hint.style.borderColor = '#ff9900';
+                }
+            }, 5000);
+        }
+        
+        // Start game
+        init();
+    </script>
+</body>
+</html>
